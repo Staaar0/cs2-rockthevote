@@ -62,42 +62,40 @@ namespace cs2_rockthevote
         {
             _dependencyManager.OnPluginLoad(this);
             RegisterListener<OnMapStart>(_dependencyManager.OnMapStart);
-
             AddCommandListener("say", OnPlayerChat);
             AddCommandListener("say_team", OnPlayerChat);
         }
 
         private HookResult OnPlayerChat(CCSPlayerController? player, CommandInfo info)
         {
-            if (player is null || !player.IsValid)
-                return HookResult.Continue;
-
-            var text = info.GetArg(1).Trim().ToLower();
-            if (text == "rtv")
+            if (player is not null && player.IsValid)
             {
-                _rtvManager.CommandHandler(player);
+                var text = info.GetArg(1).Trim().ToLower();
+                if (text == "rtv")
+                {
+                    _rtvManager.CommandHandler(player);
+                }
+                else if (text.StartsWith("nominate"))
+                {
+                    var split = text.Split("nominate");
+                    var map = split.Length > 1 ? split[1].Trim() : "";
+                    _nominationManager.CommandHandler(player, map);
+                }
+                else if (text.StartsWith("votemap"))
+                {
+                    var split = text.Split("votemap");
+                    var map = split.Length > 1 ? split[1].Trim() : "";
+                    _votemapManager.CommandHandler(player, map);
+                }
+                else if (text.StartsWith("timeleft"))
+                {
+                    _timeLeft.CommandHandler(player);
+                }
+                else if (text.StartsWith("nextmap"))
+                {
+                    _nextMap.CommandHandler(player);
+                }
             }
-            else if (text.StartsWith("nominate"))
-            {
-                var split = text.Split("nominate");
-                var map = split.Length > 1 ? split[1].Trim() : "";
-                _nominationManager.CommandHandler(player, map);
-            }
-            else if (text.StartsWith("votemap"))
-            {
-                var split = text.Split("votemap");
-                var map = split.Length > 1 ? split[1].Trim() : "";
-                _votemapManager.CommandHandler(player, map);
-            }
-            else if (text.StartsWith("timeleft"))
-            {
-                _timeLeft.CommandHandler(player);
-            }
-            else if (text.StartsWith("nextmap"))
-            {
-                _nextMap.CommandHandler(player);
-            }
-
             return HookResult.Continue;
         }
 
