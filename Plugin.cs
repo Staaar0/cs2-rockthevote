@@ -1,6 +1,7 @@
-﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Commands;
 using cs2_rockthevote.Features;
 using Microsoft.Extensions.DependencyInjection;
 using static CounterStrikeSharp.API.Core.Listeners;
@@ -61,40 +62,42 @@ namespace cs2_rockthevote
         {
             _dependencyManager.OnPluginLoad(this);
             RegisterListener<OnMapStart>(_dependencyManager.OnMapStart);
+
+            AddCommandListener("say", OnPlayerChat);
+            AddCommandListener("say_team", OnPlayerChat);
         }
 
-        [GameEventHandler(HookMode.Post)]
-        public HookResult OnChat(EventPlayerChat @event, GameEventInfo info)
+        private HookResult OnPlayerChat(CCSPlayerController? player, CommandInfo info)
         {
-            var player = Utilities.GetPlayerFromUserid(@event.Userid);
-            if (player is not null)
+            if (player is null || !player.IsValid)
+                return HookResult.Continue;
+
+            var text = info.GetArg(1).Trim().ToLower();
+            if (text == "rtv")
             {
-                var text = @event.Text.Trim().ToLower();
-                if (text == "rtv")
-                {
-                    _rtvManager.CommandHandler(player);
-                }
-                else if (text.StartsWith("nominate"))
-                {
-                    var split = text.Split("nominate");
-                    var map = split.Length > 1 ? split[1].Trim() : "";
-                    _nominationManager.CommandHandler(player, map);
-                }
-                else if (text.StartsWith("votemap"))
-                {
-                    var split = text.Split("votemap");
-                    var map = split.Length > 1 ? split[1].Trim() : "";
-                    _votemapManager.CommandHandler(player, map);
-                }
-                else if (text.StartsWith("timeleft"))
-                {
-                    _timeLeft.CommandHandler(player);
-                }
-                else if (text.StartsWith("nextmap"))
-                {
-                    _nextMap.CommandHandler(player);
-                }
+                _rtvManager.CommandHandler(player);
             }
+            else if (text.StartsWith("nominate"))
+            {
+                var split = text.Split("nominate");
+                var map = split.Length > 1 ? split[1].Trim() : "";
+                _nominationManager.CommandHandler(player, map);
+            }
+            else if (text.StartsWith("votemap"))
+            {
+                var split = text.Split("votemap");
+                var map = split.Length > 1 ? split[1].Trim() : "";
+                _votemapManager.CommandHandler(player, map);
+            }
+            else if (text.StartsWith("timeleft"))
+            {
+                _timeLeft.CommandHandler(player);
+            }
+            else if (text.StartsWith("nextmap"))
+            {
+                _nextMap.CommandHandler(player);
+            }
+
             return HookResult.Continue;
         }
 
