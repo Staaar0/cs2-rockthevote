@@ -133,6 +133,7 @@ namespace cs2_rockthevote
         {
             bool mapEnd = _config is EndOfMapConfig;
             KillTimer();
+            _pluginState.EofVoteHappening = false;
             decimal maxVotes = Votes.Select(x => x.Value).Max();
             IEnumerable<KeyValuePair<string, int>> potentialWinners = Votes.Where(x => x.Value == maxVotes);
             Random rnd = new();
