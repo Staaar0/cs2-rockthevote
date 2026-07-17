@@ -22,7 +22,8 @@ namespace cs2_rockthevote
         public HookResult EventPlayerDisconnectVotemap(EventPlayerDisconnect @event, GameEventInfo @eventInfo)
         {
             var player = @event.Userid;
-            _votemapManager.PlayerDisconnected(player);
+            if (player is not null)
+                _votemapManager.PlayerDisconnected(player);
             return HookResult.Continue;
         }
     }
@@ -39,7 +40,7 @@ namespace cs2_rockthevote
         private PluginState _pluginState;
         private MapCooldown _mapCooldown;
         private MapLister _mapLister;
-        private Plugin? _plugin;
+        private Plugin _plugin = null!;
 
         public VotemapCommand(MapLister mapLister, GameRules gamerules, IStringLocalizer stringLocalizer, ChangeMapManager changeMapManager, PluginState pluginState, MapCooldown mapCooldown)
         {
@@ -66,7 +67,7 @@ namespace cs2_rockthevote
         public void OnMapsLoaded(object? sender, Map[] maps)
         {
             votemapMenu = new("Votemap");
-            votemapMenuHud = new("VoteMap");
+            votemapMenuHud = new("VoteMap", _plugin);
             foreach (var map in _mapLister.Maps!.Where(x => x.Name != Server.MapName))
             {
                 votemapMenu.AddMenuOption(map.Name, (CCSPlayerController player, ChatMenuOption option) =>

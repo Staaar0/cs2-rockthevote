@@ -16,18 +16,18 @@ jobs:
       dllName: RockTheVote
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore RockTheVote.csproj
 
       - name: Build
-        run: dotnet publish -c Release -o publish
+        run: dotnet publish RockTheVote.csproj -c Release -o publish --no-restore
 
       - name: Create zip
         run: |

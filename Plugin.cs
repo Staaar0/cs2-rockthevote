@@ -52,7 +52,7 @@ namespace cs2_rockthevote
             _nextMap = nextMap;
         }
 
-        public Config? Config { get; set; }
+        public Config Config { get; set; } = new();
 
         public string Localize(string prefix, string key, params object[] values)
         {
