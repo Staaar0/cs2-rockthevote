@@ -71,6 +71,10 @@ namespace cs2_rockthevote
             if (player is not null && player.IsValid)
             {
                 var text = info.GetArg(1).Trim().ToLower();
+                // Players type "!rtv" and "/rtv" as often as "rtv"; none of these has a css_ command.
+                if (text.StartsWith('!') || text.StartsWith('/'))
+                    text = text[1..];
+
                 if (text == "rtv")
                 {
                     _rtvManager.CommandHandler(player);

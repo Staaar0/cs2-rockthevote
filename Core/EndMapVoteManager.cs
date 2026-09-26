@@ -45,6 +45,12 @@ namespace cs2_rockthevote
         private MapCooldown _mapCooldown;
         private Timer? Timer;
 
+        // The HUD message lasts several seconds on the client, so it is rebuilt only when the
+        // vote changes and re-sent a few times a second instead of on every server tick.
+        private const float HudRefreshInterval = 0.25f;
+        private float _nextHudDraw;
+        private string? _hudHtml;
+
         Dictionary<string, int> Votes = new();
         int timeLeft = -1;
 
@@ -76,6 +82,7 @@ namespace cs2_rockthevote
                 _voted.Add(player.UserId!.Value);
 
             Votes[mapName] += 1;
+            _hudHtml = null;
             player.PrintToChat(_localizer.LocalizeWithPrefix("emv.you-voted", mapName));
             if (Votes.Select(x => x.Value).Sum() >= _canVote)
             {
@@ -109,6 +116,21 @@ namespace cs2_rockthevote
             if (timeLeft < 0)
                 return;
 
+            var now = Server.CurrentTime;
+            if (_hudHtml is not null && now < _nextHudDraw)
+                return;
+
+            _nextHudDraw = now + HudRefreshInterval;
+            _hudHtml ??= BuildHud();
+
+            foreach (CCSPlayerController player in ServerManager.ValidPlayers().Where(x => !_voted.Contains(x.UserId!.Value)))
+            {
+                player.PrintToCenterHtml(_hudHtml);
+            }
+        }
+
+        string BuildHud()
+        {
             int index = 1;
             StringBuilder stringBuilder = new();
             stringBuilder.AppendFormat($"<b>{_localizer.Localize("emv.hud.hud-timer", timeLeft)}</b>");
@@ -123,10 +145,7 @@ namespace cs2_rockthevote
                     stringBuilder.AppendFormat($"<br><font color='yellow'>!{index++}</font> {kv.Key} <font color='green'>({kv.Value})</font>");
                 }
 
-            foreach (CCSPlayerController player in ServerManager.ValidPlayers().Where(x => !_voted.Contains(x.UserId!.Value)))
-            {
-                player.PrintToCenterHtml(stringBuilder.ToString());
-            }
+            return stringBuilder.ToString();
         }
 
         void EndVote()
@@ -134,6 +153,12 @@ namespace cs2_rockthevote
             bool mapEnd = _config is EndOfMapConfig;
             KillTimer();
             _pluginState.EofVoteHappening = false;
+            if (Votes.Count == 0)
+            {
+                // Every map is the current one or on cooldown; there is nothing to pick.
+                Console.WriteLine("[RockTheVote] Vote ended without any map to choose from; check maplist.txt and MapsInCoolDown.");
+                return;
+            }
             decimal maxVotes = Votes.Select(x => x.Value).Max();
             IEnumerable<KeyValuePair<string, int>> potentialWinners = Votes.Where(x => x.Value == maxVotes);
             Random rnd = new();
@@ -190,6 +215,8 @@ namespace cs2_rockthevote
             mapsEllected = _nominationManager.NominationWinners().Concat(mapsScrambled).Distinct().ToList();
 
             _canVote = ServerManager.ValidPlayerCount();
+            _hudHtml = null;
+            _nextHudDraw = 0;
             ChatMenu menu = new(_localizer.Localize("emv.hud.menu-title"));
             foreach (var map in mapsEllected.Take(mapsToShow))
             {
@@ -212,7 +239,10 @@ namespace cs2_rockthevote
                     EndVote();
                 }
                 else
+                {
                     timeLeft--;
+                    _hudHtml = null;
+                }
             }, TimerFlags.REPEAT);
         }
     }
