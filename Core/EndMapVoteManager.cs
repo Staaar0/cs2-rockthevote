@@ -27,7 +27,7 @@ namespace cs2_rockthevote
     public class EndMapVoteManager : IPluginDependency<Plugin, Config>
     {
         const int MAX_OPTIONS_HUD_MENU = 6;
-        public EndMapVoteManager(MapLister mapLister, ChangeMapManager changeMapManager, NominationCommand nominationManager, StringLocalizer localizer, PluginState pluginState, MapCooldown mapCooldown)
+        public EndMapVoteManager(MapLister mapLister, ChangeMapManager changeMapManager, NominationCommand nominationManager, StringLocalizer localizer, PluginState pluginState, MapCooldown mapCooldown, GameRules gameRules)
         {
             _mapLister = mapLister;
             _changeMapManager = changeMapManager;
@@ -35,6 +35,7 @@ namespace cs2_rockthevote
             _localizer = localizer;
             _pluginState = pluginState;
             _mapCooldown = mapCooldown;
+            _gameRules = gameRules;
         }
 
         private readonly MapLister _mapLister;
@@ -43,6 +44,7 @@ namespace cs2_rockthevote
         private readonly StringLocalizer _localizer;
         private PluginState _pluginState;
         private MapCooldown _mapCooldown;
+        private readonly GameRules _gameRules;
         private Timer? Timer;
 
         // The HUD message lasts several seconds on the client, so it is rebuilt only when the
@@ -115,6 +117,9 @@ namespace cs2_rockthevote
         {
             if (timeLeft < 0)
                 return;
+
+            // Runs every tick, ahead of the redraw throttle, so the vote menu doesn't flash.
+            _gameRules.PreventHtmlHudFlashing();
 
             var now = Server.CurrentTime;
             if (_hudHtml is not null && now < _nextHudDraw)
